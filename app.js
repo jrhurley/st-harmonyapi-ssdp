@@ -1,14 +1,21 @@
+// st-harmonyapi-ssdp
+// Based on Harmony API by Maddox https://github.com/maddox/harmony-api
+// Also uses node-ssdp https://www.npmjs.com/package/node-ssdp
+
 var fs = require('fs')
 var path = require('path')
 var util = require('util')
-var mqtt = require('mqtt');
+// var mqtt = require('mqtt');
 var express = require('express')
 var morgan = require('morgan')
 var bodyParser = require('body-parser')
 var parameterize = require('parameterize')
 
-var config_dir = process.env.CONFIG_DIR || './config'
-var config = require(config_dir + '/config.json');
+var ssdp = require('node-ssdp')
+var ssdpLocation = 'http://' + require('ip').address() + '/desc.html'
+
+// var config_dir = process.env.CONFIG_DIR || './config'
+// var config = require(config_dir + '/config.json');
 
 var harmonyHubDiscover = require('harmonyhubjs-discover')
 var harmony = require('harmonyhubjs-client')
@@ -26,10 +33,18 @@ var harmonyDevicesCache = {}
 var harmonyDeviceUpdateInterval = 1*60*1000 // 1 minute
 var harmonyDeviceUpdateTimers = {}
 
+/*
 var mqttClient = config.hasOwnProperty("mqtt_options") ?
     mqtt.connect(config.mqtt_host, config.mqtt_options) :
     mqtt.connect(config.mqtt_host);
 var TOPIC_NAMESPACE = config.topic_namespace || "harmony-api";
+*/
+
+// SSDP server
+var ssdpServer = new ssdp.Server({reuseAddr: true, location: ssdpLocation, suppressRootDeviceAdvertisements: true, udn: "uuid:43667470-6ef5-4af8-8e50-8f23a701c622"});
+ssdpServer.addUSN('urn:a101-org-uk:service:HarmonyAPI:1');
+ssdpServer.start();
+
 
 var app = express()
 app.use(bodyParser.urlencoded({ extended: false }))
@@ -81,6 +96,7 @@ discover.on('offline', function(hubInfo) {
 console.log('Starting discovery.')
 discover.start()
 
+/*
 // mqtt api
 
 mqttClient.on('connect', function () {
@@ -139,6 +155,7 @@ mqttClient.on('message', function (topic, message) {
     sendAction(hubSlug, command.action, repeat)
   }
 });
+*/
 
 function startProcessing(hubSlug, harmonyClient){
   harmonyHubClients[hubSlug] = harmonyClient
@@ -383,10 +400,12 @@ function sendAction(hubSlug, action, repeat){
   }
 }
 
+/*
 function publish(topic, message, options){
   topic = TOPIC_NAMESPACE + "/" + topic
   mqttClient.publish(topic, message, options);
 }
+*/
 
 app.get('/_ping', function(req, res){
   res.send('OK');
@@ -560,4 +579,16 @@ app.get('/hubs_for_index', function(req, res){
   res.send(output)
 })
 
+
+// SSDP endpoint
+app.get('/hubs_for_index', function(req, res){
+ 
+
+  res.send(output)
+})
+
 app.listen(process.env.PORT || 8282)
+
+process.on('exit', function(){
+	server.stop(); // advertise shutting down and stop listening
+ })

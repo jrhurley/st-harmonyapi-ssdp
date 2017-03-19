@@ -1,3 +1,23 @@
+## Using Harmony API with SmartThings
+
+The goal of this project was to allow Amazon's Echo to control individual devices via (Logitech's Harmony Hub)[http://www.logitech.com/en-gb/product/harmony-hub].  There is a Harmony skill for Alexa which allows Harmony activities to be started and stopped, but the problem with this is that devices will turn off when changing activities.  For example, you cannot turn a TV and a fan on and off independently through activities.  
+
+(Harmony API)[https://github.com/maddox/harmony-api] is a project by Maddox which allows the user to control Logitech Harmony Hub  through a web REST interface. Once set up in your Harmony hub, you can start and stop Harmony activities through the interface.  You can also control devices at an individual level - this gives amazing flexibility in customising your smart home.
+
+To link Alexa with Harmony API you can create an appropriate SmartApp and device in Samsung's SmartThings home automation system.  When discovered by Alexa this allows you to send customs sets of commands to your devices via the Harmony hub.
+
+## Requirements
+
+To use Harmony API with SmartThings you will need the following:
+
+* A working SmartThings hub
+* A nodejs server 
+
+## Harmony API
+
+
+
+
 # Harmony API!!
 
 Harmony API is a simple server allowing you to query/control multiple local [Harmony
