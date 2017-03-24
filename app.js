@@ -1,6 +1,6 @@
 // st-harmonyapi-ssdp
 // Based on Harmony API by Maddox https://github.com/maddox/harmony-api
-// Also uses node-ssdp https://www.npmjs.com/package/node-ssdp
+// Uses @achingbrain/ssdp https://github.com/achingbrain/ssdp
 
 var fs = require('fs')
 var path = require('path')
@@ -11,8 +11,10 @@ var morgan = require('morgan')
 var bodyParser = require('body-parser')
 var parameterize = require('parameterize')
 
-var ssdp = require('node-ssdp')
-var ssdpLocation = 'http://' + require('ip').address() + '/desc.html'
+var httpPort = process.env.PORT || 8282
+
+var ssdp = require('@achingbrain/ssdp')
+var ssdpServer = ssdp()
 
 // var config_dir = process.env.CONFIG_DIR || './config'
 // var config = require(config_dir + '/config.json');
@@ -40,18 +42,65 @@ var mqttClient = config.hasOwnProperty("mqtt_options") ?
 var TOPIC_NAMESPACE = config.topic_namespace || "harmony-api";
 */
 
-// SSDP server
-var ssdpServer = new ssdp.Server({reuseAddr: true, location: ssdpLocation, suppressRootDeviceAdvertisements: true, udn: "uuid:43667470-6ef5-4af8-8e50-8f23a701c622"});
-ssdpServer.addUSN('urn:a101-org-uk:service:HarmonyAPI:1');
-ssdpServer.start();
-
-
+// Set up express
 var app = express()
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(express.static(path.join(__dirname, 'public')));
 
 var logFormat = "'[:date[iso]] - :remote-addr - :method :url :status :response-time ms - :res[content-length]b'"
 app.use(morgan(logFormat))
+
+
+
+// SSDP server
+console.info("Starting SSDP server...")
+ssdpServer.on('error', console.error)
+
+ssdpServer.advertise({
+  usn: 'urn:a101-org-uk:service:HarmonyAPI:1',
+	location: {
+	    udp4: 'http://' + require('ip').address() + ':' + httpPort + '/ssdp/details.xml'
+	  },
+	details: {
+	   '$': {
+	      'xmlns': 'urn:schemas-upnp-org:service-1-0'
+	    },
+	    'specVersion': {
+	      'major': '1',
+	      'minor': '0'
+	    },
+	    'device': {
+	      'deviceType': 'urn:a101-org-uk:service:HarmonyAPI:1',
+	      'friendlyName': require('os').hostname(),
+	      'manufacturer': 'a101',
+	      'manufacturerURL': 'https://github.com/jrhurley',
+	      'modelDescription': 'Harmony API Server',
+		  'modelName': 'Harmony API Server',
+	      'modelNumber': '1.00',
+	      'modelURL': 'https://github.com/jrhurley',
+		  'serialNumber': '',
+	      'presentationURL': 'index.html' //,
+		  //'server': require('ip').address(),
+		  //'port': httpPort
+	    }
+	  }
+})
+.then(advert => {
+  app.get('/ssdp/details.xml', (request, response) => {
+    advert.service.details()
+    .then(details => {
+      response.set('Content-Type', 'text/xml')
+      response.send(details)
+    })
+    .catch(error => {
+		console.info('Error getting SSDP details')
+      response.set('Content-Type', 'text/xml')
+      response.send(error)
+    })
+  })
+})
+
+
 
 // Middleware
 // Check to make sure we have a harmonyHubClient to connect to
@@ -580,15 +629,11 @@ app.get('/hubs_for_index', function(req, res){
 })
 
 
-// SSDP endpoint
-app.get('/hubs_for_index', function(req, res){
- 
+app.listen(httpPort)
 
-  res.send(output)
+
+process.on('SIGINT',() => {
+  ssdpServer.stop(error => {
+    process.exit(error ? 1 : 0)
+  })
 })
-
-app.listen(process.env.PORT || 8282)
-
-process.on('exit', function(){
-	server.stop(); // advertise shutting down and stop listening
- })
