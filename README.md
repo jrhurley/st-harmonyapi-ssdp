@@ -16,3 +16,7 @@ Run _sudo npm install_ to install the dependencies.
 Launch the server by running _./script/server_
 
 If you run into errors about packages not being available even though you have run _npm install_, try installing those packages globally by using _sudo npm install &lt; package-name &gt; -g_.
+
+## More Details
+
+For further details, see the [README of the original Harmony API project](https://github.com/jrhurley/st-harmonyapi-ssdp/blob/master/README.md).
