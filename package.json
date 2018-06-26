@@ -18,7 +18,7 @@
     "@achingbrain/ssdp": "^2.1.2",
     "body-parser": "^1.12.4",
     "express": "^4.12.4",
-    "harmonyhubjs-client": "maddox/harmonyhubjs-client#for-harmony-api",
+    "harmonyhubjs-client": "^1.0.0",
     "harmonyhubjs-discover": "^1.0.2",
     "ip": "^1.1.5",
     "morgan": "^1.6.1",

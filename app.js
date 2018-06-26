@@ -5,19 +5,16 @@
 var fs = require('fs')
 var path = require('path')
 var util = require('util')
-// var mqtt = require('mqtt');
 var express = require('express')
 var morgan = require('morgan')
 var bodyParser = require('body-parser')
 var parameterize = require('parameterize')
+var os = require('os')
 
 var httpPort = process.env.PORT || 8282
 
 var ssdp = require('@achingbrain/ssdp')
 var ssdpServer = ssdp()
-
-// var config_dir = process.env.CONFIG_DIR || './config'
-// var config = require(config_dir + '/config.json');
 
 var harmonyHubDiscover = require('harmonyhubjs-discover')
 var harmony = require('harmonyhubjs-client')
@@ -34,13 +31,6 @@ var harmonyStateUpdateTimers = {}
 var harmonyDevicesCache = {}
 var harmonyDeviceUpdateInterval = 1*60*1000 // 1 minute
 var harmonyDeviceUpdateTimers = {}
-
-/*
-var mqttClient = config.hasOwnProperty("mqtt_options") ?
-    mqtt.connect(config.mqtt_host, config.mqtt_options) :
-    mqtt.connect(config.mqtt_host);
-var TOPIC_NAMESPACE = config.topic_namespace || "harmony-api";
-*/
 
 // Set up express
 var app = express()
@@ -71,7 +61,7 @@ ssdpServer.advertise({
 	    },
 	    'device': {
 	      'deviceType': 'urn:a101-org-uk:service:HarmonyAPI:1',
-	      'friendlyName': require('os').hostname(),
+	      'friendlyName': os.hostname(),
 	      'manufacturer': 'a101',
 	      'manufacturerURL': 'https://github.com/jrhurley',
 	      'modelDescription': 'Harmony API Server',
@@ -87,6 +77,8 @@ ssdpServer.advertise({
 })
 .then(advert => {
   app.get('/ssdp/details.xml', (request, response) => {
+	  console.log('SSDP details requested')
+
     advert.service.details()
     .then(details => {
       response.set('Content-Type', 'text/xml')
@@ -145,66 +137,8 @@ discover.on('offline', function(hubInfo) {
 console.log('Starting discovery.')
 discover.start()
 
-/*
-// mqtt api
 
-mqttClient.on('connect', function () {
-  mqttClient.subscribe(TOPIC_NAMESPACE + '/hubs/+/activities/+/command')
-  mqttClient.subscribe(TOPIC_NAMESPACE + '/hubs/+/devices/+/command')
-  mqttClient.subscribe(TOPIC_NAMESPACE + '/hubs/+/command')
-});
 
-mqttClient.on('message', function (topic, message) {
-  var activityCommandPattern = new RegExp(/hubs\/(.*)\/activities\/(.*)\/command/);
-  var deviceCommandPattern = new RegExp(/hubs\/(.*)\/devices\/(.*)\/command/);
-  var currentActivityCommandPattern = new RegExp(/hubs\/(.*)\/command/);
-  var activityCommandMatches = topic.match(activityCommandPattern);
-  var deviceCommandMatches = topic.match(deviceCommandPattern);
-  var currentActivityCommandMatches = topic.match(currentActivityCommandPattern);
-
-  if (activityCommandMatches) {
-    var hubSlug = activityCommandMatches[1]
-    var activitySlug = activityCommandMatches[2]
-    var state = message.toString()
-
-    activity = activityBySlugs(hubSlug, activitySlug)
-    if (!activity) { return }
-
-    if (state === 'on') {
-      startActivity(hubSlug, activity.id)
-    }else if (state === 'off'){
-      off(hubSlug)
-    }
-  } else if (deviceCommandMatches) {
-    var hubSlug = deviceCommandMatches[1]
-    var deviceSlug = deviceCommandMatches[2]
-    var messageComponents = message.toString().split(':')
-    var command = messageComponents[0]
-    var repeat = messageComponents[1]
-
-    command = commandBySlugs(hubSlug, deviceSlug, command)
-    if (!command) { return }
-
-    sendAction(hubSlug, command.action, repeat)
-  } else if (currentActivityCommandMatches) {
-    var hubSlug = currentActivityCommandMatches[1]
-    var messageComponents = message.toString().split(':')
-    var commandSlug = messageComponents[0]
-    var repeat = messageComponents[1]
-
-    hubState = harmonyHubStates[hubSlug]
-    if (!hubState) { return }
-
-    activity = activityBySlugs(hubSlug, hubState.current_activity.slug)
-    if (!activity) { return }
-
-    command = activity.commands[commandSlug]
-    if (!command) { return }
-
-    sendAction(hubSlug, command.action, repeat)
-  }
-});
-*/
 
 function startProcessing(hubSlug, harmonyClient){
   harmonyHubClients[hubSlug] = harmonyClient
@@ -625,6 +559,13 @@ app.get('/hubs_for_index', function(req, res){
     })
   });
 
+  res.send(output)
+})
+
+
+app.get('/device_name', function(req, res){
+  output = os.hostname()
+	console.log(output)
   res.send(output)
 })
 

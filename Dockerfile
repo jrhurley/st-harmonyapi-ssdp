@@ -1,4 +1,4 @@
-FROM node:argon
+FROM node:8
 
 # Create app directory
 RUN mkdir -p /usr/src/app
@@ -8,9 +8,9 @@ WORKDIR /usr/src/app
 COPY package.json /usr/src/app
 RUN rm -Rf node_modules
 RUN npm install
+RUN npm install forever -g
 
 COPY . /usr/src/app
-COPY ./config/config.sample.json /config/config.json
 
 ENV CONFIG_DIR /config
 

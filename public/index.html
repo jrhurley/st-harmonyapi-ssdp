@@ -23,6 +23,9 @@
     <img class="logo" src="/harmony-icon.png" alt="Harmony" width="256px" />
     <div class="content">
       <h1>Harmony API</h1>
+	  <div id="device-name"></div>
+	  
+      
 
       <div class="docs">
         <h2>Info</h2>
@@ -70,6 +73,27 @@
           document.getElementById("your-hubs").appendChild(div)
         } else {
           console.log('Error: ' + xhr.status); // An error occurred during the request.
+        }
+      }
+    }
+
+    </script>
+	
+    <script>
+    var xhra = new XMLHttpRequest();
+    xhra.open('GET', '/device_name');
+    xhra.send(null);
+
+    xhra.onreadystatechange = function () {
+      var DONE = 4; // readyState 4 means the request is done.
+      var OK = 200; // status 200 is a successful return.
+      if (xhra.readyState === DONE) {
+        if (xhra.status === OK) {
+          var diva = document.createElement("h2")
+          diva.innerHTML = xhra.responseText
+		document.getElementById("device-name").appendChild(diva)
+        } else {
+          console.log('Error: ' + xhra.status); // An error occurred during the request.
         }
       }
     }
